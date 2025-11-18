@@ -59,80 +59,115 @@ def parse_pnml(path: str) -> PetriNet:
     tree = ET.parse(path)
     root = tree.getroot()
 
-    # PNML thường có namespace, bạn cần xử lý cho đúng
-    # TODO: phát hiện / chuẩn hóa namespace PNML nếu cần
-    ns = {"pnml": root.tag.split("}")[0].strip("{")} if "}" in root.tag else {}
-
+    # Xử lý Namespace: Lấy cái chuỗi trong ngoặc nhọn 
+    ns_url = root.tag.split("}")[0].strip("{") if "}" in root.tag else ""
+    ns = {"pnml": ns_url} if ns_url else {}
+    
     places: List[str] = []
     transitions: List[str] = []
     place_index: Dict[str, int] = {}
     trans_index: Dict[str, int] = {}
     place_name: Dict[str, str] = {}
     trans_name: Dict[str, str] = {}
+    
+    # List tạm để lưu token ban đầu (sẽ convert sang M0 sau)
+    initial_tokens: Dict[str, int] = {} 
 
-    # --------------------------------------------------------
-    # 1) Đọc places
-    # --------------------------------------------------------
-    # Gợi ý:
-    # for p in root.findall(".//pnml:place", ns):
-    #     pid = p.get("id")
-    #     ...
-    #     tìm <name><text> ... </text></name> nếu có
-    #     tìm initialMarking / hlinitialMarking nếu có
-    # --------------------------------------------------------
-    # TODO: hiện thực đọc place, lưu places, place_index, place_name,
-    #       và tạm thời khởi tạo M0 với all zero, sau đó sẽ sửa khi
-    #       gặp initialMarking.
-    M0: List[int] = []  # TODO: khởi tạo đúng độ dài = len(places)
+    # Helper function để tìm tag bất chấp namespace
+    def find_all_tags(parent, tag_name):
+        if ns:
+            return parent.findall(f".//pnml:{tag_name}", ns)
+        else:
+            return parent.findall(f".//{tag_name}")
 
-    # --------------------------------------------------------
-    # 2) Đọc transitions
-    # --------------------------------------------------------
-    # TODO: đọc <transition>, lấy id, (name nếu có),
-    #       lưu vào transitions và trans_index, trans_name.
+    # 1. Đọc places
+    for p in find_all_tags(root, "place"):
+        pid = p.get("id")
+        places.append(pid)
+        idx = len(places) - 1
+        place_index[pid] = idx
+        
+        # Lấy tên (Name)
+        name_tag = p.find("name" if not ns else "pnml:name", ns)
+        if name_tag is not None:
+            text_tag = name_tag.find("text" if not ns else "pnml:text", ns)
+            if text_tag is not None and text_tag.text:
+                place_name[pid] = text_tag.text.strip()
+        
+        # Lấy Initial Marking
+        marking = 0
+        for tag_candidate in ["initialMarking", "hlinitialMarking"]:
+            m_tag = p.find(tag_candidate if not ns else f"pnml:{tag_candidate}", ns)
+            if m_tag is not None:
+                text_tag = m_tag.find("text" if not ns else "pnml:text", ns)
+                if text_tag is not None and text_tag.text:
+                    try:
+                        marking = int(text_tag.text.strip())
+                    except ValueError:
+                        marking = 0 # Fallback
+        initial_tokens[pid] = marking
 
-    # Sau khi đã biết |P| và |T|:
+    # Xây dựng M0 list đúng thứ tự index
+    M0: List[int] = [0] * len(places)
+    for pid, tokens in initial_tokens.items():
+        idx = place_index[pid]
+        M0[idx] = 1 if tokens > 0 else 0
+
+    # 2. Đọc transitions
+    for t in find_all_tags(root, "transition"):
+        tid = t.get("id")
+        transitions.append(tid)
+        idx = len(transitions) - 1
+        trans_index[tid] = idx
+        
+        # Lấy tên
+        name_tag = t.find("name" if not ns else "pnml:name", ns)
+        if name_tag is not None:
+            text_tag = name_tag.find("text" if not ns else "pnml:text", ns)
+            if text_tag is not None and text_tag.text:
+                trans_name[tid] = text_tag.text.strip()
+
+    # Khởi tạo ma trận Pre/Post
     num_places = len(places)
     num_trans = len(transitions)
     pre = [[0 for _ in range(num_places)] for _ in range(num_trans)]
     post = [[0 for _ in range(num_places)] for _ in range(num_trans)]
 
-    # --------------------------------------------------------
-    # 3) Đọc arcs
-    # --------------------------------------------------------
-    # Gợi ý:
-    # for a in root.findall(".//pnml:arc", ns):
-    #     src = a.get("source")
-    #     tgt = a.get("target")
-    #     weight = 1 (mặc định)
-    #     nếu có inscription/hlinscription với số thì dùng
-    #
-    #     if src in place_index and tgt in trans_index:
-    #         pre[t_idx][p_idx] += weight
-    #     elif src in trans_index and tgt in place_index:
-    #         post[t_idx][p_idx] += weight
-    #     else:
-    #         raise ValueError("Arc với source/target không hợp lệ")
-    # --------------------------------------------------------
-    # TODO: hiện thực đọc arcs + kiểm tra consistency.
+    # 3. Đọc arcs
+    for a in find_all_tags(root, "arc"):
+        src = a.get("source")
+        tgt = a.get("target")
+        
+        # Lấy weight 
+        weight = 1
+        inscription = a.find("inscription" if not ns else "pnml:inscription", ns)
+        if inscription is not None:
+            text_tag = inscription.find("text" if not ns else "pnml:text", ns)
+            if text_tag is not None and text_tag.text:
+                 try:
+                    weight = int(text_tag.text.strip())
+                 except ValueError:
+                    weight = 1
+        
+        # Logic nối dây
+        if src in place_index and tgt in trans_index:
+            # Place -> Transition (Pre)
+            p_idx = place_index[src]
+            t_idx = trans_index[tgt]
+            pre[t_idx][p_idx] += weight
+            
+        elif src in trans_index and tgt in place_index:
+            # Transition -> Place (Post)
+            t_idx = trans_index[src]
+            p_idx = place_index[tgt]
+            post[t_idx][p_idx] += weight
+            
+        else:
+            pass
 
-    # --------------------------------------------------------
-    # 4) Đọc initial marking
-    # --------------------------------------------------------
-    #  Tùy file PNML của bạn:
-    #  - có thể là <initialMarking><text>1</text></initialMarking>
-    #  - hoặc <hlinitialMarking> ...
-    #  - hoặc khai báo ở chỗ khác
-    #
-    #  Bạn cần:
-    #   + tìm mỗi place, nếu có marking > 0 thì gán M0[p_idx] = 1
-    #   + nếu không có info → mặc định 0
-    # --------------------------------------------------------
-    # TODO: cập nhật M0 tương ứng với initial marking thực tế.
-
-    # Cuối cùng, kiểm tra lại độ dài
-    assert len(M0) == num_places, "M0 phải có đúng |P| phần tử"
-
+    # 4) Verify Consistency
+    assert len(M0) == num_places, "M0 length mismatch"
+    
     return PetriNet(
         places=places,
         transitions=transitions,
