@@ -70,18 +70,20 @@ def parsePNML(path: str) -> PetriNet:
     place_name: Dict[str, str] = {}
     trans_name: Dict[str, str] = {}
     
-    # List tạm để lưu token ban đầu (sẽ convert sang M0 sau)
+    # List tạm để lưu token ban đầu (sẽ convert sang m0 sau)
     initial_tokens: Dict[str, int] = {} 
 
     # Helper function để tìm tag bất chấp namespace
-    def find_all_tags(parent, tag_name):
+    # [REFACTOR] Đổi tên hàm từ find_all_tags (snake_case) sang findAllTags (camelCase)
+    def findAllTags(parent, tag_name):
         if ns:
             return parent.findall(f".//pnml:{tag_name}", ns)
         else:
             return parent.findall(f".//{tag_name}")
 
     # 1. Đọc places
-    for p in find_all_tags(root, "place"):
+    # [REFACTOR] Gọi hàm theo tên mới findAllTags
+    for p in findAllTags(root, "place"):
         pid = p.get("id")
         places.append(pid)
         idx = len(places) - 1
@@ -107,14 +109,16 @@ def parsePNML(path: str) -> PetriNet:
                         marking = 0 # Fallback
         initial_tokens[pid] = marking
 
-    # Xây dựng M0 list đúng thứ tự index
-    M0: List[int] = [0] * len(places)
+    # Xây dựng m0 list đúng thứ tự index
+    # [REFACTOR] Đổi tên biến M0 thành m0 để đúng chuẩn snake_case (biến thường)
+    m0: List[int] = [0] * len(places)
     for pid, tokens in initial_tokens.items():
         idx = place_index[pid]
-        M0[idx] = 1 if tokens > 0 else 0
+        m0[idx] = 1 if tokens > 0 else 0
 
     # 2. Đọc transitions
-    for t in find_all_tags(root, "transition"):
+    # [REFACTOR] Gọi hàm theo tên mới findAllTags
+    for t in findAllTags(root, "transition"):
         tid = t.get("id")
         transitions.append(tid)
         idx = len(transitions) - 1
@@ -134,7 +138,8 @@ def parsePNML(path: str) -> PetriNet:
     post = [[0 for _ in range(num_places)] for _ in range(num_trans)]
 
     # 3. Đọc arcs
-    for a in find_all_tags(root, "arc"):
+    # [REFACTOR] Gọi hàm theo tên mới findAllTags
+    for a in findAllTags(root, "arc"):
         src = a.get("source")
         tgt = a.get("target")
         
@@ -166,14 +171,15 @@ def parsePNML(path: str) -> PetriNet:
             pass
 
     # 4) Verify Consistency
-    assert len(M0) == num_places, "M0 length mismatch"
+    # [REFACTOR] Cập nhật biến m0
+    assert len(m0) == num_places, "m0 length mismatch"
     
     return PetriNet(
         places=places,
         transitions=transitions,
         pre=pre,
         post=post,
-        M0=M0,
+        M0=m0, # Lưu ý: Nếu constructor của class PetriNet yêu cầu tham số là M0 (hoa), bạn cần sửa lại bên definition của class đó hoặc truyền keyword argument M0=m0 như thế này.
         place_index=place_index,
         trans_index=trans_index,
         place_name=place_name,
