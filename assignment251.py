@@ -43,7 +43,7 @@ class PetriNet:
 #  “Reading Petri nets from PNML files” :contentReference[oaicite:1]{index=1}
 # ============================================================
 
-def parse_pnml(path: str) -> PetriNet:
+def parsePNML(path: str) -> PetriNet:
     """
     Đọc file PNML 1-safe Petri net và tạo PetriNet nội bộ.
 
@@ -189,7 +189,7 @@ def parse_pnml(path: str) -> PetriNet:
 Marking = Tuple[int, ...]
 
 
-def is_enabled(pn: PetriNet, t_idx: int, M: Marking) -> bool:
+def isEnabled(pn: PetriNet, t_idx: int, M: Marking) -> bool:
     """
     Kiểm tra transition t_idx có enabled tại marking M hay không.
 
@@ -198,8 +198,11 @@ def is_enabled(pn: PetriNet, t_idx: int, M: Marking) -> bool:
     (Trong 1-safe net thì pre[t][p] ∈ {0,1}, M[p] ∈ {0,1}.)
     """
     # TODO: hiện thực đúng điều kiện enabled.
-    raise NotImplementedError
-
+    for p_index in range(len(pn.places)):
+        if M[p_index] < pn.pre[t_idx][p_index]:
+            return False
+        
+    return True
 
 def fire(pn: PetriNet, t_idx: int, M: Marking) -> Marking:
     """
@@ -209,16 +212,19 @@ def fire(pn: PetriNet, t_idx: int, M: Marking) -> Marking:
         M'(p) = M(p) - pre[t][p] + post[t][p]
     """
     # TODO: tạo list mới, áp dụng công thức trên tất cả p.
-    raise NotImplementedError
+    M_new = list(M)
+    for p_index in range(len(pn.places)):
+        M_new[p_index] = M[p_index] - pn.pre[t_idx][p_index] + pn.post[t_idx][p_index]
+
+    return tuple(M_new)
 
 
-def explicit_reachability(pn: PetriNet, use_bfs: bool = True) -> Set[Marking]:
+def explicitReachability(pn: PetriNet) -> Set[Marking]:
     """
-    Dùng BFS hoặc DFS để duyệt toàn bộ state space reachable.
+    Dùng BFS để duyệt toàn bộ state space reachable.
 
     - Input:
         pn      : PetriNet
-        use_bfs : True → BFS; False → DFS (tuỳ bạn)
     - Output:
         tập tất cả marking reachable từ M0
     """
@@ -226,15 +232,9 @@ def explicit_reachability(pn: PetriNet, use_bfs: bool = True) -> Set[Marking]:
     visited: Set[Marking] = set()
     visited.add(start)
 
-    if use_bfs:
-        container = deque([start])  # queue cho BFS
-        pop = container.popleft
-        push = container.append
-    else:
-        container = [start]         # list dùng như stack cho DFS
-        pop = container.pop
-        push = container.append
-
+    container = deque([start])
+    pop = container.popleft
+    push = container.append
     # TODO:
     #  while container không rỗng:
     #      lấy 1 marking M
@@ -245,7 +245,16 @@ def explicit_reachability(pn: PetriNet, use_bfs: bool = True) -> Set[Marking]:
     #                  thêm vào visited và container
     #
     #  Cuối cùng trả visited.
-    raise NotImplementedError
+    while container:
+        M = pop()
+        for t_index in range(len(pn.transitions)):
+            if isEnabled(pn, t_index, M):
+                M_new = fire(pn, t_index, M)
+                if (M_new not in visited):
+                    visited.add(M_new)
+                    push(M_new)
+    
+    return visited
 
 
 # ============================================================
@@ -277,7 +286,7 @@ class BDDReachabilityResult:
         self.num_states = num_states
 
 
-def bdd_reachability(pn: PetriNet) -> BDDReachabilityResult:
+def bddReachability(pn: PetriNet) -> BDDReachabilityResult:
     """
     TASK 3:
     - Mã hoá mỗi place p thành một biến Boolean x_p
@@ -305,7 +314,7 @@ def bdd_reachability(pn: PetriNet) -> BDDReachabilityResult:
 #  “Deadlock detection by using ILP and BDD” :contentReference[oaicite:4]{index=4}
 # ============================================================
 
-def find_deadlock_ilp(pn: PetriNet,
+def findDeadlockILP(pn: PetriNet,
                       reach_res: BDDReachabilityResult) -> Optional[Marking]:
     """
     TASK 4:
@@ -337,7 +346,7 @@ def find_deadlock_ilp(pn: PetriNet,
 #  “maximize c^T M,  M ∈ Reach(M0)” :contentReference[oaicite:5]{index=5}
 # ============================================================
 
-def optimize_marking_ilp(pn: PetriNet,
+def optimizeMarkingILP(pn: PetriNet,
                          reach_res: BDDReachabilityResult,
                          c: List[int]) -> Optional[Tuple[Marking, int]]:
     """
@@ -365,7 +374,7 @@ def optimize_marking_ilp(pn: PetriNet,
 #  Hàm tiện ích & main() để test
 # ============================================================
 
-def summarize_petri_net(pn: PetriNet) -> None:
+def summarizePetriNet(pn: PetriNet) -> None:
     """
     In vài thông tin tóm tắt để debug.
     """
@@ -404,8 +413,8 @@ def main():
 
     # Task 1: đọc PNML
     print("\n[Task 1] Parsing PNML...")
-    pn = parse_pnml(args.pnml_file)
-    summarize_petri_net(pn)
+    pn = parsePNML(args.pnml_file)
+    summarizePetriNet(pn)
 
     reachable_markings: Optional[Set[Marking]] = None
     bdd_res: Optional[BDDReachabilityResult] = None
@@ -413,13 +422,13 @@ def main():
     # Task 2: explicit reachability
     if args.task in ("2", "all"):
         print("\n[Task 2] Explicit reachability (BFS = {})".format(args.bfs))
-        reachable_markings = explicit_reachability(pn, use_bfs=args.bfs)
+        reachable_markings = explicitReachability(pn, use_bfs=args.bfs)
         # TODO: in thêm thống kê: số state, ví dụ một vài marking, ...
 
     # Task 3: BDD-based reachability
     if args.task in ("3", "4", "5", "all"):
         print("\n[Task 3] BDD-based reachability")
-        bdd_res = bdd_reachability(pn)
+        bdd_res = bddReachability(pn)
         # TODO: in số marking reachable từ BDD, so sánh time/memory với Task 2
 
     # Task 4: Deadlock detection via ILP + BDD
@@ -427,7 +436,7 @@ def main():
         if bdd_res is None:
             raise RuntimeError("Cần chạy Task 3 trước để có BDD Reach(M0).")
         print("\n[Task 4] ILP + BDD deadlock detection")
-        dead = find_deadlock_ilp(pn, bdd_res)
+        dead = findDeadlockILP(pn, bdd_res)
         if dead is None:
             print("  -> Không tìm thấy deadlock.")
         else:
@@ -440,7 +449,7 @@ def main():
         print("\n[Task 5] Optimization over reachable markings")
         # TODO: cho vector c từ file / tham số / hard-code để test
         c = [1] * len(pn.places)  # ví dụ tạm: maximize tổng số token
-        opt = optimize_marking_ilp(pn, bdd_res, c)
+        opt = optimizeMarkingILP(pn, bdd_res, c)
         if opt is None:
             print("  -> Không tìm được marking tối ưu (problem infeasible).")
         else:
