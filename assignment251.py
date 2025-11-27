@@ -451,7 +451,76 @@ def findDeadlockILP(pn: PetriNet,
     # 3) Ràng buộc M thuộc Reach(M0) (dựa trên BDD từ reach_res)
     # 4) Ràng buộc dead marking (không transition nào enabled)
     # 5) Gọi solver, đọc kết quả.
+    MAX_MARKINGS = 10000
+    # Tao model ILP
+    mohinh = LpProblem("Deadlock_Detection", LpMinimize)
+    bienmarking = {}
+    soplace = len(pn.places)
+    # Bien marking: bienmarking[p] = 1 neu place p co token
+    for pidx in range(soplace):
+        bienmarking[pidx] = LpVariable(f"M_{pidx}", cat=LpBinary)
+    # Trich marking tu BDD (gioi han MAX_MARKINGS)
+    cacmarkingdatduoc = []
+    somarkingdaxuly = 0
+    try:
+        for ketqua in reach_res.reachable.satisfy_all():
+            if somarkingdaxuly >= MAX_MARKINGS:
+                break
+            
+            danhsach = []
+            for pidx, bddvar in reach_res.var_map.items():
+                if ketqua.get(bddvar, False) is True:
+                    danhsach.append(pidx)
+            
+            cacmarkingdatduoc.append(tuple(danhsach))
+            somarkingdaxuly += 1
+            
+    except Exception:
+        return None
+    
+    if not cacmarkingdatduoc:
+        return None
+    # Bien chon: bienchon[i] = 1 neu chon marking thu i
+    bienchon = {}
+    somarking = len(cacmarkingdatduoc)
+    for i in range(somarking):
+        bienchon[i] = LpVariable(f"chon_{i}", cat=LpBinary)
+    
+    # Rang buoc: chi chon dung 1 marking
+    mohinh += lpSum(bienchon[i] for i in range(somarking)) == 1
+    
+    # Rang buoc: gan bienmarking theo marking duoc chon
+    for pidx in range(soplace):
+        mohinh += bienmarking[pidx] == lpSum(
+            bienchon[i] * (1 if pidx in cacmarkingdatduoc[i] else 0)
+            for i in range(somarking)
+        )
+    
+    # Rang buoc: moi transition KHONG enabled (dead marking)
+    for tidx in range(len(pn.transitions)):
+        cacinput = [p for p in range(soplace) if pn.pre[tidx][p] == 1]
+        if len(cacinput) == 0:
+            continue
+        
+        mohinh += (
+            lpSum(bienmarking[p] for p in cacinput) <= len(cacinput) - 1,
+            f"t_{tidx}_khongenabled"
+        )
+    
+    # Giai ILP
+    mohinh += 0
+    trangthai = mohinh.solve(PULP_CBC_CMD(msg=0))
+    if trangthai != 1:
+        return None
+    # Tra ve marking deadlock
+    ketquadead = tuple(
+        pidx for pidx in range(soplace)
+        if bienmarking[pidx].varValue is not None 
+        and bienmarking[pidx].varValue > 0.5
+    )
+    return ketquadead
     raise NotImplementedError
+                        
 
 
 # ============================================================
