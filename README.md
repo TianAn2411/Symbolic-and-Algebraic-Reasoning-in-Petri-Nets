@@ -50,7 +50,7 @@ Nhóm triển khai một pipeline đầy đủ:
   - Dùng BFS/DFS duyệt state space bắt đầu từ `M0`.  
   - Marking biểu diễn dưới dạng vector 0/1 (1-safe).  
   - Hiện thực:
-    - `isEnabled(pn, t, M)` – kiểm tra transition enabled,  
+    - `is_enabled(pn, t, M)` – kiểm tra transition enabled,  
     - `fire(pn, t, M)` – bắn transition,  
     - `explicitReachability(pn)` – trả về tập reachable markings.
 
@@ -89,9 +89,9 @@ Nhóm triển khai một pipeline đầy đủ:
 .
 ├── README.md
 ├── mm-251-assignment.pdf      # Đề bài, file PDF, tài liệu môn học
-├── example_pnml_file/                    # Các file .pnml dùng để test
+├── pnml_file/                    # Các file .pnml dùng để test
 ├── src/               # Hàm hỗ trợ (đọc config, in kết quả, v.v.)
-├── tests/
+├── run.py             # Hàm test tất cả các test dựa vào input từ pnml_file/
 └── requirements.txt           # (Nếu dùng thư viện ngoài / venv)
 ```
 ---
@@ -101,8 +101,8 @@ Nhóm triển khai một pipeline đầy đủ:
 |:----:|------------------|:----:|:-------:|-------------------------------------------|
 | 1    | Quốc Việt          | 2313898| 100% |                                          |
 | 2    | Thiên Ân           | 2310190| 100% |                                          |
-| 3.1  | Nguyên Khôi        | 2420020|      |                                          |
-| 3.2  |Hoàng Nam           | 2412177|      |                                          |
-| 4    |Nhật Minh           | 2412102|      |                                          |
-| 5    |Thiên Ân & Quốc Việt|        |      |                                          |
+| 3.1  | Nguyên Khôi        | 2420020| 100% |                                          |
+| 3.2  |Hoàng Nam           | 2412177| 100% |                                          |
+| 4    |Nhật Minh           | 2412102| 100% |                                          |
+| 5    |Thiên Ân & Quốc Việt|        | 100% |                                          |
 

@@ -1,0 +1,142 @@
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+ <net id="fms_1safe_hard" type="http://www.pnml.org/version-2009/grammar/ptnet">
+  <name>
+   <text>FMS_4_Processes_1_Safe</text>
+  </name>
+  <page id="page0">
+   
+   <place id="p_m1_free">
+    <name><text>Res_Machine_1</text></name>
+    <initialMarking><text>1</text></initialMarking>
+   </place>
+   <place id="p_m2_free">
+    <name><text>Res_Machine_2</text></name>
+    <initialMarking><text>1</text></initialMarking>
+   </place>
+   <place id="p_robot">
+    <name><text>Res_Robot</text></name>
+    <initialMarking><text>1</text></initialMarking>
+   </place>
+
+   <place id="p_start_a1">
+    <name><text>Start_A1</text></name>
+    <initialMarking><text>1</text></initialMarking>
+   </place>
+   <place id="p_a1_m1"><name><text>A1_In_M1</text></name></place>
+   <place id="p_a1_m2"><name><text>A1_In_M2</text></name></place>
+   <place id="p_done_a1"><name><text>Done_A1</text></name></place>
+
+   <transition id="t_a1_1"><name><text>A1_Load_M1</text></name></transition>
+   <arc id="a1_1" source="p_start_a1" target="t_a1_1"/>
+   <arc id="a1_2" source="p_m1_free" target="t_a1_1"/>
+   <arc id="a1_3" source="p_robot" target="t_a1_1"/>
+   <arc id="a1_4" source="t_a1_1" target="p_a1_m1"/>
+   <arc id="a1_5" source="t_a1_1" target="p_robot"/>
+
+   <transition id="t_a1_2"><name><text>A1_Move_M1_M2</text></name></transition>
+   <arc id="a1_6" source="p_a1_m1" target="t_a1_2"/>
+   <arc id="a1_7" source="p_m2_free" target="t_a1_2"/>
+   <arc id="a1_8" source="p_robot" target="t_a1_2"/>
+   <arc id="a1_9" source="t_a1_2" target="p_a1_m2"/>
+   <arc id="a1_10" source="t_a1_2" target="p_m1_free"/> <arc id="a1_11" source="t_a1_2" target="p_robot"/>
+
+   <transition id="t_a1_3"><name><text>A1_Finish</text></name></transition>
+   <arc id="a1_12" source="p_a1_m2" target="t_a1_3"/>
+   <arc id="a1_13" source="p_robot" target="t_a1_3"/>
+   <arc id="a1_14" source="t_a1_3" target="p_done_a1"/>
+   <arc id="a1_15" source="t_a1_3" target="p_m2_free"/> <arc id="a1_16" source="t_a1_3" target="p_robot"/>
+
+
+   <place id="p_start_a2">
+    <name><text>Start_A2</text></name>
+    <initialMarking><text>1</text></initialMarking>
+   </place>
+   <place id="p_a2_m1"><name><text>A2_In_M1</text></name></place>
+   <place id="p_a2_m2"><name><text>A2_In_M2</text></name></place>
+   <place id="p_done_a2"><name><text>Done_A2</text></name></place>
+
+   <transition id="t_a2_1"><name><text>A2_Load_M1</text></name></transition>
+   <arc id="a2_1" source="p_start_a2" target="t_a2_1"/>
+   <arc id="a2_2" source="p_m1_free" target="t_a2_1"/>
+   <arc id="a2_3" source="p_robot" target="t_a2_1"/>
+   <arc id="a2_4" source="t_a2_1" target="p_a2_m1"/>
+   <arc id="a2_5" source="t_a2_1" target="p_robot"/>
+
+   <transition id="t_a2_2"><name><text>A2_Move_M1_M2</text></name></transition>
+   <arc id="a2_6" source="p_a2_m1" target="t_a2_2"/>
+   <arc id="a2_7" source="p_m2_free" target="t_a2_2"/>
+   <arc id="a2_8" source="p_robot" target="t_a2_2"/>
+   <arc id="a2_9" source="t_a2_2" target="p_a2_m2"/>
+   <arc id="a2_10" source="t_a2_2" target="p_m1_free"/>
+   <arc id="a2_11" source="t_a2_2" target="p_robot"/>
+
+   <transition id="t_a2_3"><name><text>A2_Finish</text></name></transition>
+   <arc id="a2_12" source="p_a2_m2" target="t_a2_3"/>
+   <arc id="a2_13" source="p_robot" target="t_a2_3"/>
+   <arc id="a2_14" source="t_a2_3" target="p_done_a2"/>
+   <arc id="a2_15" source="t_a2_3" target="p_m2_free"/>
+   <arc id="a2_16" source="t_a2_3" target="p_robot"/>
+
+
+   <place id="p_start_b1">
+    <name><text>Start_B1</text></name>
+    <initialMarking><text>1</text></initialMarking>
+   </place>
+   <place id="p_b1_m2"><name><text>B1_In_M2</text></name></place>
+   <place id="p_b1_m1"><name><text>B1_In_M1</text></name></place>
+   <place id="p_done_b1"><name><text>Done_B1</text></name></place>
+
+   <transition id="t_b1_1"><name><text>B1_Load_M2</text></name></transition>
+   <arc id="b1_1" source="p_start_b1" target="t_b1_1"/>
+   <arc id="b1_2" source="p_m2_free" target="t_b1_1"/>
+   <arc id="b1_3" source="p_robot" target="t_b1_1"/>
+   <arc id="b1_4" source="t_b1_1" target="p_b1_m2"/>
+   <arc id="b1_5" source="t_b1_1" target="p_robot"/>
+
+   <transition id="t_b1_2"><name><text>B1_Move_M2_M1</text></name></transition>
+   <arc id="b1_6" source="p_b1_m2" target="t_b1_2"/>
+   <arc id="b1_7" source="p_m1_free" target="t_b1_2"/>
+   <arc id="b1_8" source="p_robot" target="t_b1_2"/>
+   <arc id="b1_9" source="t_b1_2" target="p_b1_m1"/>
+   <arc id="b1_10" source="t_b1_2" target="p_m2_free"/> <arc id="b1_11" source="t_b1_2" target="p_robot"/>
+
+   <transition id="t_b1_3"><name><text>B1_Finish</text></name></transition>
+   <arc id="b1_12" source="p_b1_m1" target="t_b1_3"/>
+   <arc id="b1_13" source="p_robot" target="t_b1_3"/>
+   <arc id="b1_14" source="t_b1_3" target="p_done_b1"/>
+   <arc id="b1_15" source="t_b1_3" target="p_m1_free"/> <arc id="b1_16" source="t_b1_3" target="p_robot"/>
+
+
+   <place id="p_start_b2">
+    <name><text>Start_B2</text></name>
+    <initialMarking><text>1</text></initialMarking>
+   </place>
+   <place id="p_b2_m2"><name><text>B2_In_M2</text></name></place>
+   <place id="p_b2_m1"><name><text>B2_In_M1</text></name></place>
+   <place id="p_done_b2"><name><text>Done_B2</text></name></place>
+
+   <transition id="t_b2_1"><name><text>B2_Load_M2</text></name></transition>
+   <arc id="b2_1" source="p_start_b2" target="t_b2_1"/>
+   <arc id="b2_2" source="p_m2_free" target="t_b2_1"/>
+   <arc id="b2_3" source="p_robot" target="t_b2_1"/>
+   <arc id="b2_4" source="t_b2_1" target="p_b2_m2"/>
+   <arc id="b2_5" source="t_b2_1" target="p_robot"/>
+
+   <transition id="t_b2_2"><name><text>B2_Move_M2_M1</text></name></transition>
+   <arc id="b2_6" source="p_b2_m2" target="t_b2_2"/>
+   <arc id="b2_7" source="p_m1_free" target="t_b2_2"/>
+   <arc id="b2_8" source="p_robot" target="t_b2_2"/>
+   <arc id="b2_9" source="t_b2_2" target="p_b2_m1"/>
+   <arc id="b2_10" source="t_b2_2" target="p_m2_free"/>
+   <arc id="b2_11" source="t_b2_2" target="p_robot"/>
+
+   <transition id="t_b2_3"><name><text>B2_Finish</text></name></transition>
+   <arc id="b2_12" source="p_b2_m1" target="t_b2_3"/>
+   <arc id="b2_13" source="p_robot" target="t_b2_3"/>
+   <arc id="b2_14" source="t_b2_3" target="p_done_b2"/>
+   <arc id="b2_15" source="t_b2_3" target="p_m1_free"/>
+   <arc id="b2_16" source="t_b2_3" target="p_robot"/>
+
+  </page>
+ </net>
+</pnml>

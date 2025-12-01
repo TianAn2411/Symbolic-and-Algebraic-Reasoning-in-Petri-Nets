@@ -1,0 +1,93 @@
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+ <net id="hospital_1safe" type="http://www.pnml.org/version-2009/grammar/ptnet">
+  <name><text>Hospital_1Safe_Hard</text></name>
+  <page id="page0">
+   
+   <place id="r_nurse_1"><name><text>Res_Nurse_1</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="r_nurse_2"><name><text>Res_Nurse_2</text></name><initialMarking><text>1</text></initialMarking></place>
+   
+   <place id="r_doctor"><name><text>Res_Doctor</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="r_room"><name><text>Res_SurgeryRoom</text></name><initialMarking><text>1</text></initialMarking></place>
+
+   <place id="p_a1_start"><name><text>Start_A1</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_a1_nurse"><name><text>A1_With_Nurse</text></name></place>
+   <place id="p_a1_doc"><name><text>A1_With_Doctor</text></name></place>
+   <place id="p_a1_room"><name><text>A1_In_Surgery</text></name></place>
+   <place id="p_a1_done"><name><text>Done_A1</text></name></place>
+
+   <transition id="t_a1_1"><name><text>A1_Get_Nurse1</text></name></transition>
+   <arc id="a1_1" source="p_a1_start" target="t_a1_1"/>
+   <arc id="a1_2" source="r_nurse_1" target="t_a1_1"/> <arc id="a1_3" source="t_a1_1" target="p_a1_nurse"/>
+
+   <transition id="t_a1_1b"><name><text>A1_Get_Nurse2</text></name></transition>
+   <arc id="a1_1b" source="p_a1_start" target="t_a1_1b"/>
+   <arc id="a1_2b" source="r_nurse_2" target="t_a1_1b"/> <arc id="a1_3b" source="t_a1_1b" target="p_a1_nurse"/>
+
+   <transition id="t_a1_2"><name><text>A1_Nurse_to_Doc</text></name></transition>
+   <arc id="a1_4" source="p_a1_nurse" target="t_a1_2"/>
+   <arc id="a1_5" source="r_doctor" target="t_a1_2"/>
+   <arc id="a1_6" source="t_a1_2" target="p_a1_doc"/>
+   <arc id="a1_7" source="t_a1_2" target="r_nurse_1"/> <transition id="t_a1_3"><name><text>A1_Doc_to_Room</text></name></transition>
+   <arc id="a1_8" source="p_a1_doc" target="t_a1_3"/>
+   <arc id="a1_9" source="r_room" target="t_a1_3"/>
+   <arc id="a1_10" source="t_a1_3" target="p_a1_room"/>
+   <arc id="a1_11" source="t_a1_3" target="r_doctor"/>
+
+   <transition id="t_a1_4"><name><text>A1_Finish</text></name></transition>
+   <arc id="a1_12" source="p_a1_room" target="t_a1_4"/>
+   <arc id="a1_13" source="t_a1_4" target="p_a1_done"/>
+   <arc id="a1_14" source="t_a1_4" target="r_room"/>
+
+
+   <place id="p_b1_start"><name><text>Start_B1</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_b1_nurse"><name><text>B1_With_Nurse</text></name></place>
+   <place id="p_b1_doc"><name><text>B1_With_Doctor</text></name></place>
+   <place id="p_b1_done"><name><text>Done_B1</text></name></place>
+
+   <transition id="t_b1_1"><name><text>B1_Get_Nurse1</text></name></transition>
+   <arc id="b1_1" source="p_b1_start" target="t_b1_1"/>
+   <arc id="b1_2" source="r_nurse_1" target="t_b1_1"/>
+   <arc id="b1_3" source="t_b1_1" target="p_b1_nurse"/>
+
+   <transition id="t_b1_2"><name><text>B1_Nurse_to_Doc</text></name></transition>
+   <arc id="b1_4" source="p_b1_nurse" target="t_b1_2"/>
+   <arc id="b1_5" source="r_doctor" target="t_b1_2"/>
+   <arc id="b1_6" source="t_b1_2" target="p_b1_doc"/>
+   <arc id="b1_7" source="t_b1_2" target="r_nurse_1"/>
+
+   <transition id="t_b1_3"><name><text>B1_Finish</text></name></transition>
+   <arc id="b1_8" source="p_b1_doc" target="t_b1_3"/>
+   <arc id="b1_9" source="t_b1_3" target="p_b1_done"/>
+   <arc id="b1_10" source="t_b1_3" target="r_doctor"/>
+
+   <place id="p_a2_start"><name><text>Start_A2</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_a2_nurse"><name><text>A2_With_Nurse</text></name></place>
+   <place id="p_a2_doc"><name><text>A2_With_Doctor</text></name></place>
+   <place id="p_a2_room"><name><text>A2_In_Surgery</text></name></place>
+   <place id="p_a2_done"><name><text>Done_A2</text></name></place>
+
+   <transition id="t_a2_1"><name><text>A2_Get_Nurse2</text></name></transition>
+   <arc id="a2_1" source="p_a2_start" target="t_a2_1"/>
+   <arc id="a2_2" source="r_nurse_2" target="t_a2_1"/>
+   <arc id="a2_3" source="t_a2_1" target="p_a2_nurse"/>
+
+   <transition id="t_a2_2"><name><text>A2_Nurse_to_Doc</text></name></transition>
+   <arc id="a2_4" source="p_a2_nurse" target="t_a2_2"/>
+   <arc id="a2_5" source="r_doctor" target="t_a2_2"/>
+   <arc id="a2_6" source="t_a2_2" target="p_a2_doc"/>
+   <arc id="a2_7" source="t_a2_2" target="r_nurse_2"/>
+
+   <transition id="t_a2_3"><name><text>A2_Doc_to_Room</text></name></transition>
+   <arc id="a2_8" source="p_a2_doc" target="t_a2_3"/>
+   <arc id="a2_9" source="r_room" target="t_a2_3"/>
+   <arc id="a2_10" source="t_a2_3" target="p_a2_room"/>
+   <arc id="a2_11" source="t_a2_3" target="r_doctor"/>
+
+   <transition id="t_a2_4"><name><text>A2_Finish</text></name></transition>
+   <arc id="a2_12" source="p_a2_room" target="t_a2_4"/>
+   <arc id="a2_13" source="t_a2_4" target="p_a2_done"/>
+   <arc id="a2_14" source="t_a2_4" target="r_room"/>
+
+  </page>
+ </net>
+</pnml>
