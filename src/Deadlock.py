@@ -18,7 +18,6 @@ def deadlock_reachable_marking(
     
     # 1. Trích xuất Marking từ BDD
     # Chúng ta chỉ lấy tối đa một số lượng mẫu để kiểm tra, tránh duyệt hết nếu quá lớn
-    MAX_SAMPLES = 10000 
     candidate_markings = []
     
     count = 0
@@ -27,9 +26,6 @@ def deadlock_reachable_marking(
     care_vars = set(all_vars)
     
     for assignment in bdd.pick_iter(bdd_node, care_vars=care_vars):
-        if count >= MAX_SAMPLES: 
-            break
-            
         # assignment là dict {var_name: True/False}
         # Cần chuyển về list [0, 1, 0...] theo thứ tự place_ids
         
@@ -45,7 +41,6 @@ def deadlock_reachable_marking(
         
         # Sinh tất cả tổ hợp cho biến thiếu
         for combo in itertools.product([0, 1], repeat=len(missing_vars)):
-            if count >= MAX_SAMPLES: break
             
             full_marking = [0] * len(all_vars)
             
@@ -66,12 +61,13 @@ def deadlock_reachable_marking(
     if not candidate_markings:
         return None
 
-    # 2. Lọc Deadlock (Logic giống cũ)
-    deadlock_indices = []
+    # 2. Lọc Deadlock
+    found_deadlocks = [] # Danh sách chứa các deadlock tìm thấy (Markings)
+    
     num_trans = len(pn.trans_ids)
     num_places = len(pn.place_ids)
     
-    for i, m in enumerate(candidate_markings):
+    for m in candidate_markings:
         is_dead = True
         
         for t_idx in range(num_trans):
@@ -85,8 +81,6 @@ def deadlock_reachable_marking(
             if not enabled: continue
             
             # Check Output (1-Safe check)
-            # Nếu bắn transition này mà tạo ra > 1 token ở chỗ nào đó thì không được bắn
-            # Deadlock là trạng thái KHÔNG THỂ bắn cái nào hợp lệ
             safe_fire = True
             for p_idx in range(num_places):
                 new_val = m[p_idx] - pn.I[t_idx, p_idx] + pn.O[t_idx, p_idx]
@@ -95,26 +89,16 @@ def deadlock_reachable_marking(
                     break
             
             if safe_fire:
-                # Tìm được ít nhất 1 transition bắn được -> Không chết
                 is_dead = False
                 break
         
         if is_dead:
-            deadlock_indices.append(i)
+            # [FIX] Lưu marking thực tế, không lưu index
+            found_deadlocks.append(list(m))
 
-    if not deadlock_indices:
+    if not found_deadlocks:
         return None
 
-    # 3. Chọn 1 Deadlock bằng ILP (để đảm bảo tính ngẫu nhiên/tối ưu nếu cần)
-    # Hoặc đơn giản trả về cái đầu tiên: return list(candidate_markings[deadlock_indices[0]])
+    # [FIX] Trả về danh sách các marking deadlock
+    return found_deadlocks
     
-    prob = LpProblem("Select_Deadlock", LpMinimize)
-    choices = {i: LpVariable(f"c_{i}", cat=LpBinary) for i in deadlock_indices}
-    prob += lpSum(choices.values()) == 1
-    prob.solve(PULP_CBC_CMD(msg=False))
-    
-    for i in deadlock_indices:
-        if choices[i].varValue and choices[i].varValue > 0.5:
-            return list(candidate_markings[i])
-
-    return list(candidate_markings[deadlock_indices[0]])

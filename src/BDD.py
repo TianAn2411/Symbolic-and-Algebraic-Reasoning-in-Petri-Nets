@@ -5,7 +5,6 @@ import time
 import sys
 
 # Tăng giới hạn đệ quy để an toàn
-sys.setrecursionlimit(50000)
 
 def build_BDD_dd(pn: PetriNet, bdd_manager) -> tuple:
     """
@@ -107,7 +106,6 @@ def build_BDD_dd(pn: PetriNet, bdd_manager) -> tuple:
 def bdd_reachable(pn: PetriNet) -> Tuple[object, int]:
     """
     Hàm chính tính toán Reachability bằng thư viện dd.
-    [FIXED] Sử dụng bdd.quantify thay vì relational_product.
     """
     # Khởi tạo BDD Manager
     bdd = _bdd.BDD()
@@ -127,11 +125,6 @@ def bdd_reachable(pn: PetriNet) -> Tuple[object, int]:
     start_time = time.time()
     
     while True:
-        step += 1
-        
-        # In log định kỳ
-        if step % 1 == 0:
-            print(f"    -> Step {step}...", end="\r")
 
         accumulated_next = bdd.false
         

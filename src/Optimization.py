@@ -72,16 +72,10 @@ def max_reachable_marking(
     all_vars_support = bdd.support(bdd_node) 
 
     iter_count = 0
-    MAX_ITERS = 1000
 
-    print("[Optimization] Starting Branch & Cut...")
+    # print("[Optimization] Starting Branch & Cut...")
 
     while pq:
-        iter_count += 1
-        if iter_count > MAX_ITERS:
-            print(f"  > Hit iteration limit ({MAX_ITERS}). Stopping.")
-            break
-            
         node = heapq.heappop(pq)
         
         # Pruning

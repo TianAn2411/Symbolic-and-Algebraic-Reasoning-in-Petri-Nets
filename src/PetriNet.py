@@ -38,6 +38,13 @@ class PetriNet:
                 return parent.findall(f".//pnml:{tag_name}", ns)
             else:
                 return parent.findall(f".//{tag_name}")
+        def find_text(parent, tag):
+            node = parent.find(f"pnml:{tag}", ns) if ns else parent.find(tag)
+            if node is not None:
+                text_node = node.find("pnml:text", ns) if ns else node.find("text")
+                if text_node is not None:
+                    return text_node.text
+            return None
 
         # ---------- 1. Đọc places ----------
         place_ids: List[str] = []
@@ -52,13 +59,8 @@ class PetriNet:
             place_ids.append(pid)
 
             # Tên place (nếu có)
-            name_text: Optional[str] = None
-            name_tag = p.find("pnml:name" if ns else "name", ns)
-            if name_tag is not None:
-                text_tag = name_tag.find("pnml:text" if ns else "text", ns)
-                if text_tag is not None and text_tag.text:
-                    name_text = text_tag.text.strip()
-            place_names.append(name_text)
+            p_name = find_text(p, "name") or pid
+            place_names.append(p_name)
 
             # Initial marking (initialMarking hoặc hlinitialMarking)
             marking_val = 0
@@ -96,13 +98,8 @@ class PetriNet:
             trans_ids.append(tid)
 
             # Tên transition (nếu có)
-            name_text: Optional[str] = None
-            name_tag = t.find("pnml:name" if ns else "name", ns)
-            if name_tag is not None:
-                text_tag = name_tag.find("pnml:text" if ns else "text", ns)
-                if text_tag is not None and text_tag.text:
-                    name_text = text_tag.text.strip()
-            trans_names.append(name_text)
+            t_name = find_text(t, "name") or tid
+            trans_names.append(t_name)
 
         trans_index = {tid: i for i, tid in enumerate(trans_ids)}
 
@@ -110,7 +107,6 @@ class PetriNet:
         num_trans = len(trans_ids)
 
         # ---------- 3. Ma trận I, O ----------
-        # CHÚ Ý: dạng (num_trans, num_places) để phù hợp test:
         #   I[t, p] = số token cần ở place p để t bắn
         #   O[t, p] = số token sinh ra ở place p khi t bắn
         I = np.zeros((num_trans, num_places), dtype=int)

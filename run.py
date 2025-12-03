@@ -151,7 +151,6 @@ def main():
     
     print("Max marking found:", max_mark)
     print("Max value (c·M):", max_val)
-
-
+ 
 if __name__ == "__main__":
     main()
