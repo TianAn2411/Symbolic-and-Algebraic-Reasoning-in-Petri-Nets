@@ -1,103 +1,102 @@
-import collections
-from typing import Tuple, List, Optional
-from pyeda.inter import *
-from collections import deque
-from .PetriNet import PetriNet
-import numpy as np
 import itertools
+from typing import List, Optional, Tuple
+from .PetriNet import PetriNet
 from pulp import LpProblem, LpVariable, LpBinary, LpMinimize, lpSum, PULP_CBC_CMD
 
 def deadlock_reachable_marking(
     pn: PetriNet, 
-    bdd: BinaryDecisionDiagram, 
+    bdd_node  # Đây là object BDD node trả về từ bdd_reachable
 ) -> Optional[List[int]]:
     """
-    Tìm một trạng thái deadlock trong tập reachable markings được biểu diễn bởi BDD.
-    Sử dụng kết hợp giải mã BDD và ILP để chọn deadlock.
+    Tìm một trạng thái deadlock sử dụng thư viện `dd`.
     """
-    MAX_MARKINGS = 10000
+    # Lấy BDD Manager từ node
+    bdd = bdd_node.bdd
     
-    # --- 0. TÁI TẠO MAP VAR (Vì hàm này chỉ nhận BDD raw) ---
-    # Cập nhật: pn.place_ids thay vì pn.places
-    X_bdd = {p: bddvar(p) for p in pn.place_ids}
-    idx_to_var = {i: X_bdd[pn.place_ids[i]] for i in range(len(pn.place_ids))}
+    # Danh sách các biến (để điền giá trị cho biến Don't Care)
+    all_vars = pn.place_ids
+    
+    # 1. Trích xuất Marking từ BDD
+    # Chúng ta chỉ lấy tối đa một số lượng mẫu để kiểm tra, tránh duyệt hết nếu quá lớn
+    MAX_SAMPLES = 10000 
+    candidate_markings = []
+    
+    count = 0
+    # pick_iter trả về generator các partial assignments (cube)
+    # care_vars: chỉ quan tâm đến các biến hiện tại (x), không quan tâm biến (x')
+    care_vars = set(all_vars)
+    
+    for assignment in bdd.pick_iter(bdd_node, care_vars=care_vars):
+        if count >= MAX_SAMPLES: 
+            break
+            
+        # assignment là dict {var_name: True/False}
+        # Cần chuyển về list [0, 1, 0...] theo thứ tự place_ids
+        
+        # Xác định biến thiếu (Don't care)
+        fixed_part = {}
+        missing_vars = []
+        
+        for pid in all_vars:
+            if pid in assignment:
+                fixed_part[pid] = 1 if assignment[pid] else 0
+            else:
+                missing_vars.append(pid)
+        
+        # Sinh tất cả tổ hợp cho biến thiếu
+        for combo in itertools.product([0, 1], repeat=len(missing_vars)):
+            if count >= MAX_SAMPLES: break
+            
+            full_marking = [0] * len(all_vars)
+            
+            # Điền biến cố định
+            for pid, val in fixed_part.items():
+                idx = pn.place_ids.index(pid) # Có thể tối ưu bằng map, nhưng n nhỏ nên ok
+                full_marking[idx] = val
+                
+            # Điền biến thiếu
+            for i, val in enumerate(combo):
+                pid = missing_vars[i]
+                idx = pn.place_ids.index(pid)
+                full_marking[idx] = val
+                
+            candidate_markings.append(tuple(full_marking))
+            count += 1
 
-    # --- 1. TRÍCH XUẤT MARKING TỪ BDD ---
-    cacmarkingdatduoc = []
-    somarkingdaxuly = 0
-    
-    try:
-        # satisfy_all trả về các "cube" (gán giá trị từng phần)
-        for ketqua in bdd.satisfy_all():
-            if somarkingdaxuly >= MAX_MARKINGS: break
-            
-            # Phân loại: Biến nào đã biết (Fixed), biến nào thiếu (Missing/Don't Care)
-            fixed_vals = {}
-            missing_indices = []
-            
-            for pidx in range(len(pn.place_ids)):
-                bdd_v = idx_to_var[pidx]
-                val = ketqua.get(bdd_v) # Trả về 0, 1 hoặc None
-                
-                if val is not None:
-                    fixed_vals[pidx] = val
-                else:
-                    # Biến không có trong BDD -> Don't Care -> Phải vét cạn
-                    missing_indices.append(pidx)
-            
-            # Sinh ra tất cả các marking có thể từ các biến thiếu (0 và 1)
-            for combo in itertools.product([0, 1], repeat=len(missing_indices)):
-                if somarkingdaxuly >= MAX_MARKINGS: break
-                
-                current_m = [0] * len(pn.place_ids)
-                
-                # Điền giá trị cố định
-                for idx, v in fixed_vals.items():
-                    current_m[idx] = v
-                
-                # Điền giá trị hoán vị (cho biến missing)
-                for i, val in enumerate(combo):
-                    idx = missing_indices[i]
-                    current_m[idx] = val
-                
-                cacmarkingdatduoc.append(tuple(current_m))
-                somarkingdaxuly += 1
-                
-    except Exception as e:
-        print(f"Error extracting BDD: {e}")
-        return None
-    
-    if not cacmarkingdatduoc:
+    if not candidate_markings:
         return None
 
-    # --- 2. LỌC DEADLOCK BẰNG PYTHON (CHUẨN 1-SAFE) ---
+    # 2. Lọc Deadlock (Logic giống cũ)
     deadlock_indices = []
+    num_trans = len(pn.trans_ids)
+    num_places = len(pn.place_ids)
     
-    for i, m in enumerate(cacmarkingdatduoc):
+    for i, m in enumerate(candidate_markings):
         is_dead = True
-        # Cập nhật: pn.trans_ids
-        for tidx in range(len(pn.trans_ids)):
-            # a. Check Input (Có đủ token để bắn không?)
-            enough_input = True
-            for p in range(len(pn.place_ids)):
-                # Cập nhật: dùng ma trận I
-                if m[p] < pn.I[tidx, p]:
-                    enough_input = False
+        
+        for t_idx in range(num_trans):
+            # Check Input (Enable)
+            enabled = True
+            for p_idx in range(num_places):
+                if m[p_idx] < pn.I[t_idx, p_idx]:
+                    enabled = False
                     break
-            if not enough_input: continue 
-                
-            # b. Check Output (1-Safe Rule: Bắn xong có bị tràn không?)
+            
+            if not enabled: continue
+            
+            # Check Output (1-Safe check)
+            # Nếu bắn transition này mà tạo ra > 1 token ở chỗ nào đó thì không được bắn
+            # Deadlock là trạng thái KHÔNG THỂ bắn cái nào hợp lệ
             safe_fire = True
-            for p in range(len(pn.place_ids)):
-                # Công thức: M' = M - I + O
-                # Cập nhật: dùng ma trận I và O
-                new_val = m[p] - pn.I[tidx, p] + pn.O[tidx, p]
+            for p_idx in range(num_places):
+                new_val = m[p_idx] - pn.I[t_idx, p_idx] + pn.O[t_idx, p_idx]
                 if new_val > 1:
-                    safe_fire = False # Bắn xong tràn token -> Cấm bắn
+                    safe_fire = False
                     break
             
             if safe_fire:
-                is_dead = False # Tìm được 1 cái bắn ngon -> Không phải Deadlock
+                # Tìm được ít nhất 1 transition bắn được -> Không chết
+                is_dead = False
                 break
         
         if is_dead:
@@ -106,23 +105,16 @@ def deadlock_reachable_marking(
     if not deadlock_indices:
         return None
 
-    # --- 3. DÙNG ILP ĐỂ CHỌN KẾT QUẢ ---
-    mohinh = LpProblem("Select_Deadlock", LpMinimize)
-    bienchon = {}
+    # 3. Chọn 1 Deadlock bằng ILP (để đảm bảo tính ngẫu nhiên/tối ưu nếu cần)
+    # Hoặc đơn giản trả về cái đầu tiên: return list(candidate_markings[deadlock_indices[0]])
     
-    # Chỉ tạo biến cho các index deadlock để tiết kiệm bộ nhớ
+    prob = LpProblem("Select_Deadlock", LpMinimize)
+    choices = {i: LpVariable(f"c_{i}", cat=LpBinary) for i in deadlock_indices}
+    prob += lpSum(choices.values()) == 1
+    prob.solve(PULP_CBC_CMD(msg=False))
+    
     for i in deadlock_indices:
-        bienchon[i] = LpVariable(f"choose_{i}", cat=LpBinary)
-    
-    # Ràng buộc: Chọn đúng 1 cái nằm trong danh sách Deadlock
-    mohinh += lpSum(bienchon[i] for i in deadlock_indices) == 1
-    
-    status = mohinh.solve(PULP_CBC_CMD(msg=0))
-    
-    if status != 1: return None
-        
-    for i in deadlock_indices:
-        if bienchon[i].varValue is not None and bienchon[i].varValue > 0.5:
-            return list(cacmarkingdatduoc[i])
+        if choices[i].varValue and choices[i].varValue > 0.5:
+            return list(candidate_markings[i])
 
-    return None
+    return list(candidate_markings[deadlock_indices[0]])

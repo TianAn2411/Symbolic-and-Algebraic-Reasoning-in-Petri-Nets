@@ -1,228 +1,195 @@
 import numpy as np
-from pyeda.inter import *
 import heapq
 from dataclasses import dataclass, field
-from typing import List, Tuple, Optional, Set, Dict
+from typing import List, Optional, Set, Dict
 import pulp
 
 @dataclass(order=True)
 class Node:
     ub: float
-    I0: Set[str] = field(compare=False) # Tập biến bị ép = 0
-    I1: Set[str] = field(compare=False) # Tập biến bị ép = 1
+    I0: Set[str] = field(compare=False) # Tập biến ép = 0
+    I1: Set[str] = field(compare=False) # Tập biến ép = 1
     
     def __post_init__(self):
-        # Priority Queue là Min-Heap, ta muốn lấy UB lớn nhất -> lưu âm
         self.sort_index = -self.ub
 
-def check_bdd_satisfy(bdd, env: Dict[str, int]) -> bool:
-    """
-    Hàm thay thế cho evaluate().
-    Sử dụng restrict để kiểm tra tính thỏa mãn của BDD với môi trường env.
-    """
-    if bdd.is_one(): return True
-    if bdd.is_zero(): return False
-
-    support_vars = list(bdd.support)
-    name_to_var = {str(v): v for v in support_vars}
-    
-    restrict_map = {}
-    for name, val in env.items():
-        if name in name_to_var:
-            restrict_map[name_to_var[name]] = val
-            
-    res = bdd.restrict(restrict_map)
-    return res.is_one()
-
-def solve_lp_relaxation(P: List[str], c: np.ndarray, I0: Set[str], I1: Set[str], cuts: List[tuple]) -> Tuple[float, Dict[str, float]]:
-    """Giải bài toán LP Relaxation"""
-
+def solve_lp_relaxation(P: List[str], c: np.ndarray, I0: Set[str], I1: Set[str], cuts: List[tuple]) -> tuple:
+    """Giải LP Relaxation bằng PuLP"""
     prob = pulp.LpProblem("Relaxation", pulp.LpMaximize)
-    
-    # [FIX] Tạo biến LP an toàn
-    x_vars = {}
-    for p in P:
-        x_vars[p] = pulp.LpVariable(f"x_{p}", 0, 1)
+    x_vars = {p: pulp.LpVariable(f"x_{p}", 0, 1) for p in P}
 
-    # Hàm mục tiêu
+    # Objective
     prob += pulp.lpSum([c[i] * x_vars[p] for i, p in enumerate(P)])
 
-    # Ràng buộc cố định
+    # Constraints
     for p in I0: prob += x_vars[p] == 0
     for p in I1: prob += x_vars[p] == 1
 
-    # Thêm Cuts
+    # Cuts
     for coeffs, rhs in cuts:
         prob += pulp.lpSum([coeffs.get(p, 0) * x_vars[p] for p in P]) <= rhs
 
-    # [FIX] Tắt log solver để output gọn gàng
     prob.solve(pulp.PULP_CBC_CMD(msg=False))
 
-    
     if pulp.LpStatus[prob.status] != 'Optimal':
-        # Trả về dict rỗng nếu không optimal
         return float('-inf'), {}
-    
-    obj_val = pulp.value(prob.objective)
-    
-    #Nếu solver trả về None cho objective, coi như thất bại
-    if obj_val is None:
-        return float('-inf'), {}
-    # Lấy giá trị an toàn, ép kiểu float
+
+    obj = pulp.value(prob.objective)
+    if obj is None: return float('-inf'), {}
+
     sol = {}
     for p in P:
         val = pulp.value(x_vars[p])
-        sol[p] = float(obj_val) if val is not None else 0.0
+        sol[p] = float(val) if val is not None else 0.0
+        
+    return float(obj), sol
 
-    return pulp.value(prob.objective), sol
-
-def get_bdd_inferences(bdd_node, P: List[str], current_vars: Set[str]) -> Tuple[List[tuple], Set[str], Set[str]]:
-    """Separation: Sinh Cuts từ BDD"""
-    mutex_cuts = []
-    forced_0 = set()
-    forced_1 = set()
+def max_reachable_marking(
+    place_ids: List[str], 
+    bdd_node, 
+    c: np.ndarray
+) -> tuple:
+    """
+    Branch & Cut Optimization sử dụng thư viện `dd`.
+    """
+    # Lấy Manager từ node
+    bdd = bdd_node.bdd
     
-    if bdd_node.is_zero():
-        return [], set(), set()
-
-    support_vars = list(bdd_node.support)
-    name_to_var = {str(v): v for v in support_vars}
-
-    def safe_restrict(node, mapping):
-        valid_map = {name_to_var[k]: v for k, v in mapping.items() if k in name_to_var}
-        if not valid_map: return node
-        return node.restrict(valid_map)
-
-    for p in current_vars:
-        # Check p=1
-        r1 = safe_restrict(bdd_node, {p: 1})
-        if r1.is_zero(): forced_0.add(p)
-            
-        # Check p=0
-        r0 = safe_restrict(bdd_node, {p: 0})
-        if r0.is_zero(): forced_1.add(p)
-
-    candidates = list(current_vars - forced_0 - forced_1)
-    limit_checks = 0
-    for i in range(len(candidates)):
-        for j in range(i + 1, len(candidates)):
-            if limit_checks > 50: break # Giảm limit xuống 50 cho nhanh
-            u, v = candidates[i], candidates[j]
-            
-            r_uv = safe_restrict(bdd_node, {u: 1, v: 1})
-            if r_uv.is_zero():
-                mutex_cuts.append(({u: 1, v: 1}, 1))
-            limit_checks += 1
-
-    return mutex_cuts, forced_0, forced_1
-
-def max_reachable_marking(P: List[str], bdd, c: np.ndarray) -> Tuple[Optional[List[int]], Optional[float]]:
-    """Main Branch & Cut Algorithm"""
-    
-    if bdd.is_zero():
+    if bdd_node == bdd.false:
         return None, None
 
-    root_node = Node(ub=float('inf'), I0=set(), I1=set())
-    pq = [root_node]
+    c_dict = {name: val for name, val in zip(place_ids, c)}
+    
+    # Hàng đợi ưu tiên
+    root = Node(ub=float('inf'), I0=set(), I1=set())
+    pq = [root]
     
     best_val = float('-inf')
     best_sol = None
     
-    # Map tên biến -> hệ số c
-    c_dict = {name: val for name, val in zip(P, c)}
+    # Map tên biến sang dd var (nếu cần, nhưng dd dùng string id trực tiếp)
+    # support của dd trả về set string
+    all_vars_support = bdd.support(bdd_node) 
 
-    all_vars = list(bdd.support)
-    global_name_to_var = {str(v): v for v in all_vars}
+    iter_count = 0
+    MAX_ITERS = 1000
+
+    print("[Optimization-dd] Starting Branch & Cut...")
 
     while pq:
+        iter_count += 1
+        if iter_count > MAX_ITERS:
+            print(f"  > Hit iteration limit ({MAX_ITERS}). Stopping.")
+            break
+            
         node = heapq.heappop(pq)
         
         # Pruning
         if node.ub <= best_val and best_val != float('-inf'):
             continue
 
-        # 1. Restrict BDD
-        current_map = {}
-        for p in node.I0:
-            if p in global_name_to_var: current_map[global_name_to_var[p]] = 0
-        for p in node.I1:
-            if p in global_name_to_var: current_map[global_name_to_var[p]] = 1
-            
-        current_bdd = bdd.restrict(current_map)
+        # 1. Restrict BDD (dùng bdd.let)
+        # Tạo dict gán giá trị: {var: True/False}
+        assignment = {}
+        for p in node.I0: assignment[p] = False
+        for p in node.I1: assignment[p] = True
+        
+        # Lọc bớt assignment chỉ chứa biến có trong support để tránh lỗi (tùy phiên bản dd)
+        valid_assignment = {k: v for k, v in assignment.items()} # dd thường chấp nhận tất cả
+        
+        current_bdd = bdd.let(valid_assignment, bdd_node)
 
-        if current_bdd.is_zero():
+        if current_bdd == bdd.false:
             continue
 
-        free_vars = [p for p in P if p not in node.I0 and p not in node.I1]
-
-        # 2. Leaf Node Check
-        if not free_vars:
-            current_val = sum(c_dict[p] for p in node.I1)
+        # Check nếu tìm được 1 nghiệm duy nhất (Singleton)
+        path_count = bdd.count(current_bdd, nvars=len(place_ids))
+        if path_count == 1:
+            # Lấy nghiệm duy nhất đó
+            # pick trả về 1 dict thỏa mãn
+            model = bdd.pick(current_bdd, care_vars=set(place_ids))
+            
+            # Tính giá trị
+            current_val = 0
+            current_sol = []
+            for p in place_ids:
+                # Nếu biến trong model là True -> 1, False -> 0
+                # Nếu biến không có trong model (Don't care) -> Thường gán 0 cho an toàn hoặc theo I1
+                val = 1 if model.get(p, False) else 0
+                
+                # Override bằng ràng buộc nhánh (cho chắc chắn)
+                if p in node.I1: val = 1
+                if p in node.I0: val = 0
+                
+                current_sol.append(val)
+                if val == 1: current_val += c_dict[p]
+            
             if current_val > best_val:
                 best_val = current_val
-                best_sol = [1 if p in node.I1 else 0 for p in P]
+                best_sol = current_sol
             continue
 
-        # 3. Separation
-        cuts, forced_0, forced_1 = get_bdd_inferences(current_bdd, P, set(free_vars))
+        # 2. Sinh Cuts từ BDD (Separation)
+        # Tìm biến chưa gán
+        free_vars = [p for p in place_ids if p not in node.I0 and p not in node.I1]
         
+        forced_0 = set()
+        forced_1 = set()
+        mutex_cuts = [] # list of ({vars: 1}, rhs)
+        
+        # Inference đơn giản
+        for p in free_vars:
+            # Check p=1 -> Nếu ra False nghĩa là p phải = 0
+            if bdd.let({p: True}, current_bdd) == bdd.false:
+                forced_0.add(p)
+            # Check p=0 -> Nếu ra False nghĩa là p phải = 1
+            elif bdd.let({p: False}, current_bdd) == bdd.false:
+                forced_1.add(p)
+                
+        # Cập nhật ràng buộc mới
         new_I0 = node.I0 | forced_0
         new_I1 = node.I1 | forced_1
-        free_vars = [p for p in P if p not in new_I0 and p not in new_I1]
+        real_free_vars = [p for p in place_ids if p not in new_I0 and p not in new_I1]
 
-        # 4. Solve LP
-        ub_lp, sol_lp = solve_lp_relaxation(P, c, new_I0, new_I1, cuts)
+        # 3. Solve LP
+        ub_lp, sol_lp = solve_lp_relaxation(place_ids, c, new_I0, new_I1, mutex_cuts)
         
-        # [FIX] Kiểm tra nếu LP thất bại -> cắt nhánh này
-        if ub_lp == float('-inf') or not sol_lp:
-            continue
-
+        if ub_lp == float('-inf'): continue
+        
         current_ub = min(node.ub, ub_lp)
+        if current_ub <= best_val: continue
 
-        if current_ub <= best_val:
-            continue
-
-        # Heuristic: Check nghiệm nguyên
+        # 4. Check Integer Solution
         is_integer = True
         temp_I1 = set(new_I1)
         
-        for p in free_vars:
-            # [FIX] sol_lp.get trả về 0.0 nếu không có key, an toàn.
+        for p in real_free_vars:
             val = sol_lp.get(p, 0.0)
-            
-            # [FIX] Kiểm tra None (phòng hờ)
-            if val is None: val = 0.0
-            
             if abs(val - 0) > 1e-5 and abs(val - 1) > 1e-5:
                 is_integer = False
                 break
             if val > 0.9: temp_I1.add(p)
-        
+            
         if is_integer:
-            check_env = {p: (1 if p in temp_I1 else 0) for p in P}
-            if check_bdd_satisfy(bdd, check_env):
+            # Kiểm tra lại với BDD xem nghiệm nguyên này có hợp lệ không
+            check_env = {p: (True if p in temp_I1 else False) for p in place_ids}
+            if bdd.let(check_env, bdd_node) != bdd.false:
                 val_int = sum(c_dict[p] for p in temp_I1)
                 if val_int > best_val:
                     best_val = val_int
-                    best_sol = [check_env[p] for p in P]
-                # Nếu tìm thấy nghiệm nguyên tối ưu bằng cận trên, ta có thể dừng nhánh này luôn
-                if val_int >= current_ub - 1e-5:
-                    continue
+                    best_sol = [1 if p in temp_I1 else 0 for p in place_ids]
+                if val_int >= current_ub - 1e-5: continue
 
         # 5. Branching
-        if not free_vars: continue
+        if not real_free_vars: continue
         
-        # Chiến lược chọn biến phân nhánh: Chọn biến có giá trị phân số gần 0.5 nhất (Most fractional)
-        # Hoặc chọn biến có hệ số c lớn nhất
-        # Ở đây dùng hệ số c lớn nhất cho đơn giản
-        branch_var = max(free_vars, key=lambda p: abs(c_dict[p]))
+        # Chọn biến có giá trị phân số gần 0.5 nhất
+        branch_var = max(real_free_vars, key=lambda p: min(abs(sol_lp.get(p, 0) - 0.5), 0.5))
         
-        child_1 = Node(ub=current_ub, I0=new_I0, I1=new_I1 | {branch_var})
-        heapq.heappush(pq, child_1)
-        
-        child_0 = Node(ub=current_ub, I0=new_I0 | {branch_var}, I1=new_I1)
-        heapq.heappush(pq, child_0)
+        # Nhánh 1
+        heapq.heappush(pq, Node(ub=current_ub, I0=new_I0, I1=new_I1 | {branch_var}))
+        # Nhánh 0
+        heapq.heappush(pq, Node(ub=current_ub, I0=new_I0 | {branch_var}, I1=new_I1))
 
-    final_val = int(best_val) if best_val != float('-inf') and best_val is not None else None
-    
+    final_val = int(best_val) if best_val != float('-inf') else None
     return best_sol, final_val
