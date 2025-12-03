@@ -1,0 +1,142 @@
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+ <net id="philo_12_net" type="http://www.pnml.org/version-2009/grammar/ptnet">
+  <name><text>Dining_Philosophers_N12_1Safe</text></name>
+  <page id="page0">
+   
+   <place id="p_think_0"><name><text>Think_0</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_0"><name><text>Wait_0</text></name></place>
+   <place id="p_eat_0"><name><text>Eat_0</text></name></place>
+   <place id="p_think_1"><name><text>Think_1</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_1"><name><text>Wait_1</text></name></place>
+   <place id="p_eat_1"><name><text>Eat_1</text></name></place>
+   <place id="p_think_2"><name><text>Think_2</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_2"><name><text>Wait_2</text></name></place>
+   <place id="p_eat_2"><name><text>Eat_2</text></name></place>
+   <place id="p_think_3"><name><text>Think_3</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_3"><name><text>Wait_3</text></name></place>
+   <place id="p_eat_3"><name><text>Eat_3</text></name></place>
+   <place id="p_think_4"><name><text>Think_4</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_4"><name><text>Wait_4</text></name></place>
+   <place id="p_eat_4"><name><text>Eat_4</text></name></place>
+   <place id="p_think_5"><name><text>Think_5</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_5"><name><text>Wait_5</text></name></place>
+   <place id="p_eat_5"><name><text>Eat_5</text></name></place>
+   <place id="p_think_6"><name><text>Think_6</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_6"><name><text>Wait_6</text></name></place>
+   <place id="p_eat_6"><name><text>Eat_6</text></name></place>
+   <place id="p_think_7"><name><text>Think_7</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_7"><name><text>Wait_7</text></name></place>
+   <place id="p_eat_7"><name><text>Eat_7</text></name></place>
+   <place id="p_think_8"><name><text>Think_8</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_8"><name><text>Wait_8</text></name></place>
+   <place id="p_eat_8"><name><text>Eat_8</text></name></place>
+   <place id="p_think_9"><name><text>Think_9</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_9"><name><text>Wait_9</text></name></place>
+   <place id="p_eat_9"><name><text>Eat_9</text></name></place>
+   <place id="p_think_10"><name><text>Think_10</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_10"><name><text>Wait_10</text></name></place>
+   <place id="p_eat_10"><name><text>Eat_10</text></name></place>
+   <place id="p_think_11"><name><text>Think_11</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_wait_11"><name><text>Wait_11</text></name></place>
+   <place id="p_eat_11"><name><text>Eat_11</text></name></place>
+
+   <place id="p_fork_0"><name><text>Fork_0</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_1"><name><text>Fork_1</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_2"><name><text>Fork_2</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_3"><name><text>Fork_3</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_4"><name><text>Fork_4</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_5"><name><text>Fork_5</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_6"><name><text>Fork_6</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_7"><name><text>Fork_7</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_8"><name><text>Fork_8</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_9"><name><text>Fork_9</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_10"><name><text>Fork_10</text></name><initialMarking><text>1</text></initialMarking></place>
+   <place id="p_fork_11"><name><text>Fork_11</text></name><initialMarking><text>1</text></initialMarking></place>
+
+   <transition id="t_L_0"><name><text>TakeL_0</text></name></transition>
+   <arc id="a_L0_1" source="p_think_0" target="t_L_0"/><arc id="a_L0_2" source="p_fork_0" target="t_L_0"/><arc id="a_L0_3" source="t_L_0" target="p_wait_0"/>
+   <transition id="t_R_0"><name><text>TakeR_0</text></name></transition>
+   <arc id="a_R0_1" source="p_wait_0" target="t_R_0"/><arc id="a_R0_2" source="p_fork_1" target="t_R_0"/><arc id="a_R0_3" source="t_R_0" target="p_eat_0"/>
+   <transition id="t_P_0"><name><text>Put_0</text></name></transition>
+   <arc id="a_P0_1" source="p_eat_0" target="t_P_0"/><arc id="a_P0_2" source="t_P_0" target="p_think_0"/><arc id="a_P0_3" source="t_P_0" target="p_fork_0"/><arc id="a_P0_4" source="t_P_0" target="p_fork_1"/>
+
+   <transition id="t_L_1"><name><text>TakeL_1</text></name></transition>
+   <arc id="a_L1_1" source="p_think_1" target="t_L_1"/><arc id="a_L1_2" source="p_fork_1" target="t_L_1"/><arc id="a_L1_3" source="t_L_1" target="p_wait_1"/>
+   <transition id="t_R_1"><name><text>TakeR_1</text></name></transition>
+   <arc id="a_R1_1" source="p_wait_1" target="t_R_1"/><arc id="a_R1_2" source="p_fork_2" target="t_R_1"/><arc id="a_R1_3" source="t_R_1" target="p_eat_1"/>
+   <transition id="t_P_1"><name><text>Put_1</text></name></transition>
+   <arc id="a_P1_1" source="p_eat_1" target="t_P_1"/><arc id="a_P1_2" source="t_P_1" target="p_think_1"/><arc id="a_P1_3" source="t_P_1" target="p_fork_1"/><arc id="a_P1_4" source="t_P_1" target="p_fork_2"/>
+
+   <transition id="t_L_2"><name><text>TakeL_2</text></name></transition>
+   <arc id="a_L2_1" source="p_think_2" target="t_L_2"/><arc id="a_L2_2" source="p_fork_2" target="t_L_2"/><arc id="a_L2_3" source="t_L_2" target="p_wait_2"/>
+   <transition id="t_R_2"><name><text>TakeR_2</text></name></transition>
+   <arc id="a_R2_1" source="p_wait_2" target="t_R_2"/><arc id="a_R2_2" source="p_fork_3" target="t_R_2"/><arc id="a_R2_3" source="t_R_2" target="p_eat_2"/>
+   <transition id="t_P_2"><name><text>Put_2</text></name></transition>
+   <arc id="a_P2_1" source="p_eat_2" target="t_P_2"/><arc id="a_P2_2" source="t_P_2" target="p_think_2"/><arc id="a_P2_3" source="t_P_2" target="p_fork_2"/><arc id="a_P2_4" source="t_P_2" target="p_fork_3"/>
+
+   <transition id="t_L_3"><name><text>TakeL_3</text></name></transition>
+   <arc id="a_L3_1" source="p_think_3" target="t_L_3"/><arc id="a_L3_2" source="p_fork_3" target="t_L_3"/><arc id="a_L3_3" source="t_L_3" target="p_wait_3"/>
+   <transition id="t_R_3"><name><text>TakeR_3</text></name></transition>
+   <arc id="a_R3_1" source="p_wait_3" target="t_R_3"/><arc id="a_R3_2" source="p_fork_4" target="t_R_3"/><arc id="a_R3_3" source="t_R_3" target="p_eat_3"/>
+   <transition id="t_P_3"><name><text>Put_3</text></name></transition>
+   <arc id="a_P3_1" source="p_eat_3" target="t_P_3"/><arc id="a_P3_2" source="t_P_3" target="p_think_3"/><arc id="a_P3_3" source="t_P_3" target="p_fork_3"/><arc id="a_P3_4" source="t_P_3" target="p_fork_4"/>
+
+   <transition id="t_L_4"><name><text>TakeL_4</text></name></transition>
+   <arc id="a_L4_1" source="p_think_4" target="t_L_4"/><arc id="a_L4_2" source="p_fork_4" target="t_L_4"/><arc id="a_L4_3" source="t_L_4" target="p_wait_4"/>
+   <transition id="t_R_4"><name><text>TakeR_4</text></name></transition>
+   <arc id="a_R4_1" source="p_wait_4" target="t_R_4"/><arc id="a_R4_2" source="p_fork_5" target="t_R_4"/><arc id="a_R4_3" source="t_R_4" target="p_eat_4"/>
+   <transition id="t_P_4"><name><text>Put_4</text></name></transition>
+   <arc id="a_P4_1" source="p_eat_4" target="t_P_4"/><arc id="a_P4_2" source="t_P_4" target="p_think_4"/><arc id="a_P4_3" source="t_P_4" target="p_fork_4"/><arc id="a_P4_4" source="t_P_4" target="p_fork_5"/>
+
+   <transition id="t_L_5"><name><text>TakeL_5</text></name></transition>
+   <arc id="a_L5_1" source="p_think_5" target="t_L_5"/><arc id="a_L5_2" source="p_fork_5" target="t_L_5"/><arc id="a_L5_3" source="t_L_5" target="p_wait_5"/>
+   <transition id="t_R_5"><name><text>TakeR_5</text></name></transition>
+   <arc id="a_R5_1" source="p_wait_5" target="t_R_5"/><arc id="a_R5_2" source="p_fork_6" target="t_R_5"/><arc id="a_R5_3" source="t_R_5" target="p_eat_5"/>
+   <transition id="t_P_5"><name><text>Put_5</text></name></transition>
+   <arc id="a_P5_1" source="p_eat_5" target="t_P_5"/><arc id="a_P5_2" source="t_P_5" target="p_think_5"/><arc id="a_P5_3" source="t_P_5" target="p_fork_5"/><arc id="a_P5_4" source="t_P_5" target="p_fork_6"/>
+
+   <transition id="t_L_6"><name><text>TakeL_6</text></name></transition>
+   <arc id="a_L6_1" source="p_think_6" target="t_L_6"/><arc id="a_L6_2" source="p_fork_6" target="t_L_6"/><arc id="a_L6_3" source="t_L_6" target="p_wait_6"/>
+   <transition id="t_R_6"><name><text>TakeR_6</text></name></transition>
+   <arc id="a_R6_1" source="p_wait_6" target="t_R_6"/><arc id="a_R6_2" source="p_fork_7" target="t_R_6"/><arc id="a_R6_3" source="t_R_6" target="p_eat_6"/>
+   <transition id="t_P_6"><name><text>Put_6</text></name></transition>
+   <arc id="a_P6_1" source="p_eat_6" target="t_P_6"/><arc id="a_P6_2" source="t_P_6" target="p_think_6"/><arc id="a_P6_3" source="t_P_6" target="p_fork_6"/><arc id="a_P6_4" source="t_P_6" target="p_fork_7"/>
+
+   <transition id="t_L_7"><name><text>TakeL_7</text></name></transition>
+   <arc id="a_L7_1" source="p_think_7" target="t_L_7"/><arc id="a_L7_2" source="p_fork_7" target="t_L_7"/><arc id="a_L7_3" source="t_L_7" target="p_wait_7"/>
+   <transition id="t_R_7"><name><text>TakeR_7</text></name></transition>
+   <arc id="a_R7_1" source="p_wait_7" target="t_R_7"/><arc id="a_R7_2" source="p_fork_8" target="t_R_7"/><arc id="a_R7_3" source="t_R_7" target="p_eat_7"/>
+   <transition id="t_P_7"><name><text>Put_7</text></name></transition>
+   <arc id="a_P7_1" source="p_eat_7" target="t_P_7"/><arc id="a_P7_2" source="t_P_7" target="p_think_7"/><arc id="a_P7_3" source="t_P_7" target="p_fork_7"/><arc id="a_P7_4" source="t_P_7" target="p_fork_8"/>
+
+   <transition id="t_L_8"><name><text>TakeL_8</text></name></transition>
+   <arc id="a_L8_1" source="p_think_8" target="t_L_8"/><arc id="a_L8_2" source="p_fork_8" target="t_L_8"/><arc id="a_L8_3" source="t_L_8" target="p_wait_8"/>
+   <transition id="t_R_8"><name><text>TakeR_8</text></name></transition>
+   <arc id="a_R8_1" source="p_wait_8" target="t_R_8"/><arc id="a_R8_2" source="p_fork_9" target="t_R_8"/><arc id="a_R8_3" source="t_R_8" target="p_eat_8"/>
+   <transition id="t_P_8"><name><text>Put_8</text></name></transition>
+   <arc id="a_P8_1" source="p_eat_8" target="t_P_8"/><arc id="a_P8_2" source="t_P_8" target="p_think_8"/><arc id="a_P8_3" source="t_P_8" target="p_fork_8"/><arc id="a_P8_4" source="t_P_8" target="p_fork_9"/>
+
+   <transition id="t_L_9"><name><text>TakeL_9</text></name></transition>
+   <arc id="a_L9_1" source="p_think_9" target="t_L_9"/><arc id="a_L9_2" source="p_fork_9" target="t_L_9"/><arc id="a_L9_3" source="t_L_9" target="p_wait_9"/>
+   <transition id="t_R_9"><name><text>TakeR_9</text></name></transition>
+   <arc id="a_R9_1" source="p_wait_9" target="t_R_9"/><arc id="a_R9_2" source="p_fork_10" target="t_R_9"/><arc id="a_R9_3" source="t_R_9" target="p_eat_9"/>
+   <transition id="t_P_9"><name><text>Put_9</text></name></transition>
+   <arc id="a_P9_1" source="p_eat_9" target="t_P_9"/><arc id="a_P9_2" source="t_P_9" target="p_think_9"/><arc id="a_P9_3" source="t_P_9" target="p_fork_9"/><arc id="a_P9_4" source="t_P_9" target="p_fork_10"/>
+
+   <transition id="t_L_10"><name><text>TakeL_10</text></name></transition>
+   <arc id="a_L10_1" source="p_think_10" target="t_L_10"/><arc id="a_L10_2" source="p_fork_10" target="t_L_10"/><arc id="a_L10_3" source="t_L_10" target="p_wait_10"/>
+   <transition id="t_R_10"><name><text>TakeR_10</text></name></transition>
+   <arc id="a_R10_1" source="p_wait_10" target="t_R_10"/><arc id="a_R10_2" source="p_fork_11" target="t_R_10"/><arc id="a_R10_3" source="t_R_10" target="p_eat_10"/>
+   <transition id="t_P_10"><name><text>Put_10</text></name></transition>
+   <arc id="a_P10_1" source="p_eat_10" target="t_P_10"/><arc id="a_P10_2" source="t_P_10" target="p_think_10"/><arc id="a_P10_3" source="t_P_10" target="p_fork_10"/><arc id="a_P10_4" source="t_P_10" target="p_fork_11"/>
+
+   <transition id="t_L_11"><name><text>TakeL_11</text></name></transition>
+   <arc id="a_L11_1" source="p_think_11" target="t_L_11"/><arc id="a_L11_2" source="p_fork_11" target="t_L_11"/><arc id="a_L11_3" source="t_L_11" target="p_wait_11"/>
+   <transition id="t_R_11"><name><text>TakeR_11</text></name></transition>
+   <arc id="a_R11_1" source="p_wait_11" target="t_R_11"/><arc id="a_R11_2" source="p_fork_0" target="t_R_11"/><arc id="a_R11_3" source="t_R_11" target="p_eat_11"/>
+   <transition id="t_P_11"><name><text>Put_11</text></name></transition>
+   <arc id="a_P11_1" source="p_eat_11" target="t_P_11"/><arc id="a_P11_2" source="t_P_11" target="p_think_11"/><arc id="a_P11_3" source="t_P_11" target="p_fork_11"/><arc id="a_P11_4" source="t_P_11" target="p_fork_0"/>
+
+  </page>
+ </net>
+</pnml>

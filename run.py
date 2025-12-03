@@ -110,6 +110,13 @@ def main():
             "FORK_1": 0, "FORK_2": 0, "FORK_3": 0,
             "FORK_4": 0, "FORK_5": 0, "FORK_6": 0
         }
+    elif filename == "pnml_file/philo12.pnml":
+        weight_map = {}
+        for i in range(12):
+            weight_map[f"Eat_{i}"] = 10
+            weight_map[f"Wait_{i}"] = -1
+            weight_map[f"Think_{i}"] = 0
+            weight_map[f"Fork_{i}"] = 0
     else:
         weight_map = {
         # Mục tiêu: Khách A lên phòng, Khách B rời đi (+10)

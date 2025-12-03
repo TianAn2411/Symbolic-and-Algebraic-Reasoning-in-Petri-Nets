@@ -74,7 +74,7 @@ def max_reachable_marking(
     iter_count = 0
     MAX_ITERS = 1000
 
-    print("[Optimization-dd] Starting Branch & Cut...")
+    print("[Optimization] Starting Branch & Cut...")
 
     while pq:
         iter_count += 1
