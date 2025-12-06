@@ -100,5 +100,6 @@ def deadlock_reachable_marking(
         return None
 
     # [FIX] Trả về danh sách các marking deadlock
+    print("Numbers of Deadlock:", len(found_deadlocks))
     return found_deadlocks
     
