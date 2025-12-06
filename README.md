@@ -40,48 +40,20 @@ Nhóm triển khai một pipeline đầy đủ:
 ### **Task 1 – PNML Parser & PetriNet Model**
 - Đọc file `.pnml` theo chuẩn 1-safe PNML.
 - Xây dựng cấu trúc dữ liệu cơ sở.
-- **Hàm hiện thực:**
-  - `PetriNet.from_pnml(filename)`: Parse file XML, trích xuất places, transitions, arcs và initial marking.
-  - `__init__(...)`: Khởi tạo đối tượng PetriNet với các ma trận `I` (Input), `O` (Output) và vector `M0`.
 
 ### **Task 2 – Explicit Reachability (BFS/DFS)**
-- Duyệt không gian trạng thái bằng thuật toán tìm kiếm truyền thống.
-- **Hàm hiện thực:**
-  - `is_enabled(pn, t_idx, M)`: Kiểm tra xem transition `t` có thể bắn tại marking `M` không (tuân thủ luật 1-safe).
-  - `fire(pn, t_idx, M)`: Sinh ra marking mới `M'` sau khi bắn transition `t`.
-  - `bfs_reachable(pn)`: Trả về tập reachable markings sử dụng Breadth-First Search (Queue).
-  - `dfs_reachable(pn)`: Trả về tập reachable markings sử dụng Depth-First Search (Stack).
-
+- Duyệt không gian trạng thái bằng thuật toán tìm kiếm BFS/DFS.
+  
 ### **Task 3 – Symbolic Reachability with BDD**
 - Mã hóa Petri net và tính toán tập reachable markings sử dụng Binary Decision Diagrams (BDD) để xử lý bùng nổ trạng thái.
-- **Hàm hiện thực:**
-  - `get_topology_sorted_order(pn)`: Sắp xếp lại thứ tự các biến (Places) dựa trên cấu trúc đồ thị để tối ưu kích thước cây BDD.
-  - `build_BDD(pn)`: Mã hóa Initial Marking và xây dựng danh sách các Transition Relations dưới dạng biểu thức logic BDD.
-  - `fast_smoothing(bdd_func, vars_set)`: Hàm khử biến (Existential Quantification) được tối ưu hóa.
-  - `compute_BDD_reachability(...)`: Thuật toán duyệt không gian trạng thái symbolic (sử dụng Frontier Set).
-  - `bdd_reachable(pn)`: Hàm wrapper trả về BDD đại diện cho tập reachable markings.
 
 ### **Task 4 – Deadlock Detection (ILP-based Analysis)**
 - Phân tích tính chất hệ thống, cụ thể là tìm kiếm trạng thái Deadlock (nơi hệ thống dừng hoạt động).
 - Sử dụng Integer Linear Programming (ILP) để lọc kết quả từ BDD.
-- **Hàm hiện thực:**
-  - `deadlock_reachable_marking(pn, bdd)`: 
-    - Trích xuất các marking tiềm năng từ BDD.
-    - Kiểm tra điều kiện enable của tất cả transition cho từng marking.
-    - Sử dụng ILP (thư viện PuLP) để chọn ra chính xác một trạng thái deadlock (nếu có).
 
 ### **Task 5 – Optimization & Evaluation**
 - **Optimization:** Tìm marking đạt được (`reachable marking`) sao cho hàm mục tiêu $c \cdot M$ là lớn nhất.
   - Sử dụng thuật toán **Branch & Cut** kết hợp BDD và LP Relaxation.
-  - **Hàm hiện thực:**
-    - `solve_lp_relaxation(...)`: Giải bài toán quy hoạch tuyến tính (Relaxed LP) để tìm cận trên.
-    - `get_bdd_inferences(...)`: Sinh ra các ràng buộc (Cuts) từ cấu trúc BDD.
-    - `max_reachable_marking(pn, bdd, c)`: Thuật toán chính tìm marking tối ưu.
-- **Evaluation:**
-  - Chạy thực nghiệm trên các mô hình mẫu (Token Ring, FMS, Hospital, Cloud...).
-  - So sánh hiệu năng (thời gian, bộ nhớ) giữa Explicit (Task 2) và Symbolic (Task 3).
-  - Đánh giá tính đúng đắn của giải thuật Optimization và Deadlock Detection.
-
 ---
 
 ## Cấu trúc thư mục
@@ -91,9 +63,12 @@ Nhóm triển khai một pipeline đầy đủ:
 ├── README.md                  # Thông tin dự án và hướng dẫn
 ├── mm-251-assignment.pdf      # Đề bài
 ├── pnml_file/                 # Thư mục chứa các file .pnml test case
-│   ├── fsm.pnml    # Hệ thống sản xuất
-│   ├── hospital.pnml    # Quy trình bệnh viện
-│   ├── hotel.pnml       # Hệ thống khách sạn
+│   ├── fsm.pnml           # Hệ thống sản xuất
+│   ├── hospital.pnml      # Quy trình bệnh viện
+│   ├── hotel.pnml         # Hệ thống khách sạn
+│   ├── philo6.pnml        # Bài toán các triết gia (6 places)
+│   ├── philo12.pnml       # Bài toán các triết gia (12 places)
+│   ├── complex.pnml       # Một mạng phức tạp với 20 places để test hiệu năng
 ├── src/                       # Source code chính
 │   ├── PetriNet.py            # Model & Parser
 │   ├── BFS.py                 # Explicit BFS
@@ -102,28 +77,13 @@ Nhóm triển khai một pipeline đầy đủ:
 │   ├── Deadlock.py            # Deadlock Detection (Task 4)
 │   └── Optimization.py        # Optimization (Task 5)
 ├── run.py                     # Script chính để chạy demo tổng hợp
+├── result.txt                 # Kết quả chạy run.py
 └── requirements.txt           # Danh sách thư viện cần thiết
-```
----
-## Hướng dẫn cài đặt và chạy chương trình
-### Clone repo
-```sh
-git clone git@github.com:TianAn2411/Symbolic-and-Algebraic-Reasoning-in-Petri-Nets.git\
-cd Symbolic-and-Algebraic-Reasoning-in-Petri-Nets
-```
-### Cài đặt các thư viện cần thiết
-```sh
-pip install -r requirements.txt
-```
-** Chú ý: Nên cài C++ desktop development phiên bản mới nhất hoặc chạy bằng [docker](https://hub.docker.com/layers/library/python/3.8-slim/images/sha256-a2f6f359b60fb00e46813670f63ea780f3520d9d060bae4d3d08ec3b0dabd54c) **
-### Chạy all test
-```sh
-python run.py
 ```
 ---
 ## Bảng phân việc
 
-| Task | Người phụ trách | MSSV | Tiến độ | Note                                      |
+| Task | Người phụ trách | MSSV | Tiến độ | Note                                       |
 |:----:|------------------|:----:|:-------:|-------------------------------------------|
 | 1    | Quốc Việt          | 2313898| 100% |                                          |
 | 2    | Thiên Ân           | 2310190| 100% |                                          |
@@ -132,3 +92,66 @@ python run.py
 | 4    |Nhật Minh           | 2412102| 100% |                                          |
 | 5    |Thiên Ân & Quốc Việt|        | 100% |                                          |
 
+---
+## Hướng dẫn Cài đặt và Chạy chương trình
+
+### Clone repository
+
+```bash
+git clone git@github.com:TianAn2411/Symbolic-and-Algebraic-Reasoning-in-Petri-Nets.git
+cd Symbolic-and-Algebraic-Reasoning-in-Petri-Nets
+```
+
+### Ubuntu/Linux
+#### Chuẩn bị môi trường
+```bash
+# 1. Cài đặt pip và venv nếu chưa có
+sudo apt update
+sudo apt install python3-pip python3-venv
+
+# 2. Tạo môi trường ảo
+python3 -m venv venv
+
+# 3. Kích hoạt môi trường ảo
+source venv/bin/activate
+
+# 4. Tải các thư viện cần thiết
+pip install -r requirements.txt
+```
+
+#### Chạy test
+```bash
+# 1. Chạy test mặc định của chương trình
+python3 run.py
+
+# 2. Chạy test tự chọn
+python3 run.py <đường dẫn tới file pnml> (các file có sẵn trong pnml_file)
+
+Caution: Nếu các bạn có file pnml riêng thì nên cấu hình thêm vecto C để chạy task 5 vì trong run.py là đã cấu hình sẵn vector C để phục vụ chạy test
+
+# 3. Chạy tất cả các test
+python3 run.py --all
+```
+Kết quả chạy sẽ được lưu vào `result.txt`
+
+### Window
+#### Chuẩn bị môi trường
+```bash
+# 1. Tải các thư viện cần thiết
+pip install -r requirements.txt
+```
+
+#### Chạy test
+```bash
+# 1. Chạy test mặc định của chương trình
+python run.py
+
+# 2. Chạy test tự chọn
+python run.py <đường dẫn tới file pnml> (các file có sẵn trong pnml_file)
+
+Caution: Nếu các bạn có file pnml riêng thì nên cấu hình thêm vecto C để chạy task 5 vì trong run.py là đã cấu hình sẵn vector C để phục vụ chạy test
+
+# 3. Chạy tất cả các test
+python run.py --all
+```
+Kết quả chạy sẽ được lưu vào `result.txt`

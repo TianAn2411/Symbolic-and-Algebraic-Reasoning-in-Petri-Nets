@@ -36,7 +36,7 @@ def get_weight_vector(pn, filename):
             "B1_With_Nurse": 1, "B1_With_Doctor": 2,
             "Res_Nurse_1": 0, "Res_Nurse_2": 0, "Res_Doctor": 0, "Res_SurgeryRoom": 0
         }
-    elif "example.pnml" in base_name and "example2" not in base_name:
+    elif "philo6.pnml" in base_name:
         weight_map = {
             "EAT_1": 10, "EAT_2": 10, "EAT_3": 10, 
             "EAT_4": 10, "EAT_5": 10, "EAT_6": 10,
@@ -56,7 +56,7 @@ def get_weight_vector(pn, filename):
             weight_map[f"Wait_{i}"] = -1
             weight_map[f"Think_{i}"] = 0
             weight_map[f"Fork_{i}"] = 0
-    elif "hotel.pnml" in base_name: # Mặc định cho Hotel hoặc các file khác
+    elif "hotel.pnml" in base_name:
         weight_map = {
             "A1_In_Room_Done": 10, "A2_In_Room_Done": 10,
             "B1_Checked_Out": 10, "B2_Checked_Out": 10,
@@ -70,20 +70,18 @@ def get_weight_vector(pn, filename):
             "Res_RoomKey_101": 0, "Res_RoomKey_102": 0
         }
     
-    # Tạo vector c mặc định từ weight_map
+    # Tạo vector c 
     c = np.zeros(num_places, dtype=int)
     for i, name in enumerate(pn.place_names):
         c[i] = weight_map.get(name, 0)
 
-    # Xử lý override đặc biệt cho example2.pnml
-    if "example2.pnml" in base_name:
-        # Vector cứng mà bạn yêu cầu
+    # Xử lý override đặc biệt cho complex.pnml
+    if "complex.pnml" in base_name:
         c_hardcoded = [-3, 1, 4, -1, 1, 0, 3, -5, 5, -4, -2, 2, 5, 4, 5, -1, 2, 0, 1, 0]
-        # Kiểm tra độ dài để tránh lỗi crash chương trình
         if len(c_hardcoded) == num_places:
             c = np.array(c_hardcoded)
         else:
-            # Nếu số lượng place không khớp, trả về warning trong log thay vì crash
+            # Nếu số lượng place không khớp, trả về warning trong log
             pass 
 
     return c
@@ -142,10 +140,8 @@ def run_analysis(filename):
         c = get_weight_vector(pn, filename)
         
         # Chỉ hiển thị vector c nếu ngắn, dài quá thì hiển thị tóm tắt
-        if len(c) <= 20:
-             log(f"Weight Vector c:\n{c}")
-        else:
-             log(f"Weight Vector c (first 10): {c[:10]} ...")
+        
+        log(f"Weight Vector c:\n{c}")
 
         max_mark, max_val = max_reachable_marking(pn.place_ids, bdd, c)
         log(f"Max marking found: {max_mark}")
@@ -175,8 +171,8 @@ def main():
         "pnml_file/fsm.pnml",
         "pnml_file/hospital.pnml",
         "pnml_file/hotel.pnml",
-        "pnml_file/example.pnml",
-        "pnml_file/example2.pnml",
+        "pnml_file/philo6.pnml",
+        "pnml_file/complex.pnml",
         "pnml_file/philo12.pnml"
     ]
 
@@ -200,7 +196,7 @@ def main():
         
     elif args.filename:
         full_report = ""
-        # Chạy 1 file cụ thể do người dùng nhập
+        # Chạy 1 file cụ thể 
         report = run_analysis(args.filename)
         full_report += report + "\n"
         with open("result.txt", "w", encoding="utf-8") as file:
@@ -210,13 +206,13 @@ def main():
         print(result)
         
     else:
-        # Nếu không nhập gì cả, in hướng dẫn
+
         print("Usage:")
         print("  Run specific file: python run.py pnml_file/fsm.pnml")
         print("  Run all tests:     python run.py --all")
-        print("  Run default:       python run.py pnml_file/example2.pnml")
+        print("  Run default:       python run.py pnml_file/fsm.pnml")
         
-        # Mặc định chạy example2 như code cũ nếu không có tham số
+ 
         print("\nRunning default (fsm.pnml)...")
         run_analysis("pnml_file/fsm.pnml")
 
