@@ -15,7 +15,7 @@
 | **Trương Thiên Ân** | **2310190** | **TN02** | **an.truong241105@hcmut.edu.vn** | **Leader** |
 | Nguyễn Hồ Nguyên Khôi    | 2420020 |     | khoi.nguyen2420020@hcmut.edu.vn     |         |
 | Nguyễn Hoàng Nam         | 2412177 | L04 | nam.nguyen270905@hcmut.edu.vn       |         |
-| Nguyễn Thế Nhật Minh     | 2412102 |     | minh.nguyenthenhat@hcmut.edu.vn     |         |
+| Nguyễn Thế Nhật Minh     | 2412102 | L02 | minh.nguyenthenhat@hcmut.edu.vn     |         |
 
 ---
 
